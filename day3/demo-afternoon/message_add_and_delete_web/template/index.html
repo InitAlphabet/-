@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<style>
+    .line-box{
+    min-width: 250px;
+    max-width: 250px;
+    min-height: 22px;
+    font-size: 16px;
+    padding: 0;
+    font-style: italic;
+    color: blueviolet;
+    margin-top: 2%;
+    padding: 0;
+    background-color: aqua;
+    }
+</style>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo</title>
+    <link rel="shortcut icon" href="{{url_for('static',filename = 'sinoSeimi.png')}}" type="image/x-icon">
+</head>
+<body>
+   <div>
+     <h1>Todo</h1>
+     <input placeholder="请输入评论,回车即可提交" id ="inputer"></input>
+     <div id = "content-box" style="min-width: 300px; max-width: 300px; min-height: 100px;">
+     </div>
+   </div>
+</body>
+</html>
+
+<script>
+ input = document.getElementById("inputer")
+ contentBox = document.getElementById("content-box")
+ var currentUrlPrefix = window.location.protocol + '//' + window.location.host;
+
+input.addEventListener("keyup", function(event) {
+// 给输入框创建回车检测
+  if (event.key === "Enter") {
+    var val = this.value
+    if(val==null || val==""){
+      alert("comment can't be null!")
+    }
+    fetch(currentUrlPrefix+"/add_comment?content="+val)
+    .then(response => response.json())
+    .then(data => {
+      Add(data["index"],val)
+    })
+    .catch(error => {
+      console.error('Error fetching data:', error);
+    });
+  }
+});
+
+function render(data){
+//动态添加评论
+   data.forEach(element => {
+      let index = element["index"]
+      let content = element["content"]
+      let like = element["likes"]
+      Add(index,content)
+   });
+}
+
+function delete_comment(bt){
+//  点击事件
+var index =bt.getAttribute("index")
+fetch(currentUrlPrefix+"/delete_comment?index="+index)
+    .then(response => response.json())
+    .then(data => {
+      console.log(data)
+      if(data["status"]==200){
+        childList = contentBox.querySelectorAll('[index="'+index+'"]')
+        childList.forEach(element => {
+          contentBox.removeChild(element)
+        });
+      }else{
+        alert("fail to delete!")
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching data:', error);
+    });
+
+}
+function Add(index,content){
+//动态添加元素
+      lineDiv = document.createElement("div")
+      lineDiv.classList.add("line-box")
+      lineDiv.textContent = content 
+      lineDiv.setAttribute("index",index)
+      button   = document.createElement("button")
+      button.textContent = "Delete" 
+      button.setAttribute("index",index)
+      button.addEventListener('click',function(){delete_comment(this)})
+      contentBox.appendChild(lineDiv)
+      contentBox.appendChild(button)
+}
+function getData() {
+// 发起GET请求，获取数据
+  fetch(currentUrlPrefix+"/get_comments")
+    .then(response => response.json())
+    .then(data => {
+      render(data)
+    })
+    .catch(error => {
+      console.error('Error fetching data:', error);
+    });
+}
+function init(){
+    getData()
+}
+
+init()
+</script>
